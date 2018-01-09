@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik
+    command: traefik --docker --docker.domain=docker.localhost --docker.watch --web --logLevel=DEBUG
+    container_name: traefik
+    network_mode: "host"
+    volumes: 
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /dev/null:/traefik.toml
+
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    privileged: true
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.port=8080"
+      - "traefik.backend=jenkins"
+      - "traefik.frontend.rule=Host: jenkins.docker.localhost"
+      - "traefik.frontend.passHostHeader=true"
+
+# environment:
+#       - JENKINS_OPTS="--prefix=/jenkins"
+
+volumes:
+  jenkins-data: {}

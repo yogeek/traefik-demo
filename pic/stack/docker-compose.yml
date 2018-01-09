@@ -8,7 +8,7 @@ services:
     container_name: traefik
     ports:
      - "80:80"
-     - "8080:8080"
+     - "8888:8080"
     volumes: 
      - /var/run/docker.sock:/var/run/docker.sock
     command: traefik --docker --docker.swarmmode --docker.domain=traefik --docker.watch --web --logLevel=DEBUG
@@ -23,21 +23,19 @@ services:
     image: jenkins/jenkins:lts
     container_name: jenkins
     privileged: true
-    labels:
-      - traefik.backend=jenkins
-      - traefik.port=8080
-      - traefik.frontend.rule=PathPrefixStrip
-      - traefik.frontend.value=/jenkins
-      - traefik.frontend.passHostHeader=true
     volumes:
-      - /data/pic/jenkins-data:/var/jenkins_home
+      - jenkins-data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - traefik-net
+    environment:
+      - JENKINS_OPTS="--prefix=/jenkins"
     deploy:
       labels:
-        - "traefik.port=80"
-        - "traefik.backend=jenkins"
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-net"
+        - "traefik.port=8080"
+        - "traefik.backend=pic_jenkins"
         - "traefik.frontend.rule=PathPrefixStrip: /jenkins"
         - "traefik.frontend.passHostHeader=true"
       placement:
@@ -47,20 +45,16 @@ services:
   nexus:
     image: sonatype/nexus3
     container_name: nexus
-    labels:
-      - traefik.backend=nexus
-      - traefik.port=80
-      - traefik.frontend.rule=PathPrefixStrip
-      - traefik.frontend.value=/nexus
-      - traefik.frontend.passHostHeader=true
     volumes:
-      - /data/pic/nexus-data:/nexus-data
+      - nexus-data:/nexus-data
     networks:
       - traefik-net
     deploy:
       labels:
-        - "traefik.port=80"
-        - "traefik.backend=nexus"
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-net"
+        - "traefik.port=8081"
+        - "traefik.backend=pic_nexus"
         - "traefik.frontend.rule=PathPrefixStrip: /nexus"
         - "traefik.frontend.passHostHeader=true"
       placement:
@@ -70,12 +64,16 @@ services:
   sonar:
     image: sonarqube:alpine
     container_name: sonar
+    labels:
+      - "traefik.enable=false"
     networks:
       - traefik-net
 
 volumes:
+  jenkins-data: {}
   nexus-data: {}
 
 networks:
   traefik-net:
-    driver: overlay
+    external: true
+    #driver: overlay

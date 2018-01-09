@@ -1,0 +1,2 @@
+docker run   -d   --name traefik-reverse-proxy   --network=host   -p 80:80 -p 8888:8080   -v /dev/null:/etc/traefik/traefik.toml   -v /var/run/docker.sock:/var/run/docker.sock   traefik:1.5-alpine     --docker --web --logLevel=DEBUG
+docker run   -d   --name jenkins   --label traefik.port=8080   --label traefik.frontend.rule=PathPrefix: /jenkins   -e JENKINS_OPTS=--prefix=/jenkins jenkins/jenkins:lts
