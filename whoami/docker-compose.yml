@@ -1,5 +1,17 @@
-# https://github.com/SvenDowideit/docs-automation/blob/master/jenkins/setup-docker-and-start-jenkins.sh - configure
-# socat TCP-LISTEN:2376,range=0.0.0.0/0,reuseaddr,fork UNIX:/var/run/docker.sock
+# Traefik demo for docker-compose
+#
+# Launch with :
+#   docker-compose up
+#
+# Traefik Dashboard is avaibale at :
+#   http://localhost:8080
+#
+#
+# Services will be accessible at :
+#
+#   - whoami1 => curl -H host:whoami1.traefik
+#   - whoami2 => curl -H host:whoami2.traefik
+
 version: '3'
 
 services:
@@ -11,7 +23,7 @@ services:
      - "8080:8080"
     volumes: 
      - /var/run/docker.sock:/var/run/docker.sock
-    command: traefik --docker --docker.swarmmode --docker.domain=traefik --docker.watch --web --logLevel=DEBUG
+    command: traefik --docker  --docker.domain=traefik --docker.watch --web --logLevel=DEBUG
     networks:
       - traefik-net
     deploy:
@@ -25,6 +37,7 @@ services:
       - traefik-net
     labels:
       - "traefik.frontend.rule=Host:whoami1.traefik"
+      # - "traefik.frontend.rule=Host:whoami.traefik; PathPrefixStrip: /whoami1"
 
   whoami2:
     image: emilevauge/whoami
@@ -32,6 +45,7 @@ services:
       - traefik-net
     labels:
       - "traefik.frontend.rule=Host:whoami2.traefik"
+      # - "traefik.frontend.rule=Host:whoami.traefik; PathPrefixStrip: /whoami2"
 
 networks:
   traefik-net:

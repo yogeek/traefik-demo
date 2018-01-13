@@ -1,11 +1,27 @@
+# Jenkins behind traefik
+# 
+# /etc/hosts : <IP> jenkins.traefik
+#
+# http://jenkins.traefik:8080
+#
+# http://jenkins.traefik/jenkins
+#
+
+
+
 version: '3'
 
 services:
   traefik:
     image: traefik
-    command: traefik --docker --docker.domain=docker.localhost --docker.watch --web --logLevel=DEBUG
-    container_name: traefik
-    network_mode: "host"
+    command: traefik --docker --docker.domain=traefik --docker.watch --web --logLevel=DEBUG
+    ports:
+      - 80:80
+      - 8080:8080
+    labels:
+      - "traefik.enable=false"
+    networks: 
+      - traefik-net
     volumes: 
      - /var/run/docker.sock:/var/run/docker.sock
      - /dev/null:/traefik.toml
@@ -13,19 +29,22 @@ services:
 
   jenkins:
     image: jenkins/jenkins:lts
-    container_name: jenkins
     privileged: true
     volumes:
       - jenkins-data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JENKINS_OPTS="--prefix=/jenkins"
+    networks: 
+      - traefik-net
     labels:
       - "traefik.port=8080"
-      - "traefik.backend=jenkins"
-      - "traefik.frontend.rule=Host: jenkins.docker.localhost"
+      - "traefik.frontend.rule=Host:jenkins.traefik"
       - "traefik.frontend.passHostHeader=true"
-
-# environment:
-#       - JENKINS_OPTS="--prefix=/jenkins"
+      - "traefik.docker.network=traefik"
 
 volumes:
   jenkins-data: {}
+
+networks: 
+  traefik-net:
